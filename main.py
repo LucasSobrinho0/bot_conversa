@@ -11,6 +11,8 @@ BASE_URL = "https://backend.botconversa.com.br/api/v1/webhook"
 REQUEST_TIMEOUT = 30
 FLOW_ID = 8325072
 FLOW_NAME = "Cold Zap (com audio)"
+TAG_ID = 16786315
+TAG_NAME = "SDR_IA"
 
 def _headers(api_key: str) -> dict:
     return {
@@ -195,6 +197,22 @@ def send_flow(api_key: str, payload: dict) -> dict:
     return response.json()
 
 
+def add_tag_to_subscriber(api_key: str, subscriber_id: int, tag_id: int) -> dict:
+    url = f"{BASE_URL}/subscriber/{subscriber_id}/tags/{tag_id}/"
+    response = requests.post(
+        url,
+        headers=_headers(api_key),
+        json={},
+        timeout=REQUEST_TIMEOUT,
+    )
+    response.raise_for_status()
+
+    if not response.content:
+        return {}
+
+    return response.json()
+
+
 def get_or_create_subscriber_id(api_key: str, contact: dict) -> int:
     existing = find_contact(api_key, {"phone": contact["phone"]})
     if existing and existing.get("id"):
@@ -202,11 +220,13 @@ def get_or_create_subscriber_id(api_key: str, contact: dict) -> int:
 
     created = create_contact(api_key, contact)
     if created.get("id"):
+        add_tag_to_subscriber(api_key, int(created["id"]), TAG_ID)
         return created["id"]
 
     # Alguns endpoints nao retornam o objeto completo no create.
     existing_after_create = find_contact(api_key, {"phone": contact["phone"]})
     if existing_after_create and existing_after_create.get("id"):
+        add_tag_to_subscriber(api_key, int(existing_after_create["id"]), TAG_ID)
         return existing_after_create["id"]
 
     raise RuntimeError(f"Nao foi possivel obter subscriber_id para {contact['phone']}")
@@ -247,4 +267,3 @@ if __name__ == "__main__":
             print(f"[ERRO] {contact['phone']}: {exc}{details}")
         except Exception as exc:
             print(f"[ERRO] {contact['phone']}: {exc}")
-
