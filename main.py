@@ -230,7 +230,6 @@ if __name__ == "__main__":
     for contact in contacts:
         try:
             random_seconds = random.randint(60, 360)
-            sleep(random_seconds)
             subscriber_id = get_or_create_subscriber_id(api_key, contact)
             send_flow(
                 api_key,
@@ -240,6 +239,7 @@ if __name__ == "__main__":
                 },
             )
             print(f"[OK] Fluxo enviado para {contact['phone']} (subscriber_id={subscriber_id}) (nome={contact['first_name']})")
+            sleep(random_seconds)
         except requests.HTTPError as exc:
             details = ""
             if exc.response is not None and exc.response.text:
